@@ -8,32 +8,32 @@ from sklearn.metrics import roc_curve, auc
 
 
 
-def create_random_forest(X_train, y_train, X_test, y_test, forest_size, max_depth):
+def create_random_forest(X_train, y_train, X_val, y_val, forest_size, max_depth):
     """
     The function creates a random forest and return the forest and its accuracy.
     :param X_train: X train
     :param y_train: y train
-    :param X_test: X test
-    :param y_test: y test
+    :param X_val: X test
+    :param y_val: y test
     :param forest_size: the number of trees in the forest
     :param max_depth: the max depth of each tree
     :return: the forest and its accuracy
     """
     forest = RandomForestClassifier(n_estimators=forest_size, criterion="entropy", max_depth=max_depth, max_samples=0.7)
     forest.fit(X_train, y_train)
-    test_prediction =  forest.predict(X_test)
-    false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test, test_prediction)
+    test_prediction =  forest.predict(X_val)
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(y_val, test_prediction)
     return forest, auc(false_positive_rate, true_positive_rate)
 
 
 
-def return_decision_tree(data_frame, iterations=1, test_size=0.3, forest_size = None, depth_size = None):
+def return_decision_tree(data_frame, iterations=1, validation_size=0.3, forest_size = None, depth_size = None):
     """
     The function will return a decision tree classifier for the given data_frame.
     in each iteration the function will create decision tree base on a different split to train and test sets.
     :param data_frame: the data_frame to work on.
     :param iterations: number of iteration we want the function to do.
-    :param test_size: the percentage of the test set from the entire data.
+    :param validation_size: the percentage of the test set from the entire data.
     :param forest_size: the number of trees in the forest. By default tries different sizes and picks the best.
     :param depth_size: the max depth of each tree in the forest. By default tries different sizes and picks the best.
     :return: best decision tree found.
@@ -51,10 +51,10 @@ def return_decision_tree(data_frame, iterations=1, test_size=0.3, forest_size = 
     auc_by_forest_size = np.array([0] * len(forest_size)).astype(float)
     auc_by_depth_size = np.array([0] * size_sqrt).astype(float)
     for i in range(iterations):
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size)
+        X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=validation_size)
         for j, size in enumerate(forest_size):
             for z, depth in enumerate(depth_size):
-                forest, auc = create_random_forest(X_train, y_train, X_test, y_test, size, depth)
+                forest, auc = create_random_forest(X_train, y_train, X_val, y_val, size, depth)
                 auc_by_forest_size[j] += auc
                 auc_by_depth_size[z] += auc
                 if auc > max_auc:
