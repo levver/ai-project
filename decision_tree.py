@@ -4,8 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
-
-
+from decimal import Decimal
 
 
 def create_random_forest(X_train, y_train, X_val, y_val, forest_size, max_depth):
@@ -48,9 +47,13 @@ def return_decision_tree(data_frame, iterations=1, validation_size=0.3, forest_s
     max_auc = 0
     max_depth = 0
     max_trees = 0
-    auc_by_forest_size = np.array([0] * len(forest_size)).astype(float)
-    auc_by_depth_size = np.array([0] * size_sqrt).astype(float)
+
+    max_auc_iter = [0] * iterations
+    max_depth_iter = [0] * iterations
+    max_trees_iter = [0] * iterations
     for i in range(iterations):
+        auc_by_forest_size = np.array([0] * len(forest_size)).astype(float)
+        auc_by_depth_size = np.array([0] * size_sqrt).astype(float)
         X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=validation_size)
         for j, size in enumerate(forest_size):
             for z, depth in enumerate(depth_size):
@@ -62,23 +65,65 @@ def return_decision_tree(data_frame, iterations=1, validation_size=0.3, forest_s
                     max_auc = auc
                     max_trees = size
                     max_depth = depth
-    auc_by_forest_size = auc_by_forest_size / (iterations*len(depth_size))
-    auc_by_depth_size = auc_by_depth_size / (iterations*len(forest_size))
-    plt.plot(forest_size, auc_by_forest_size, 'b')
-    plt.ylabel("accuracy")
-    plt.xlabel("forest size")
-    plt.show()
-    plt.figure()
-    plt.plot(depth_size, auc_by_depth_size, 'r')
-    plt.ylabel("accuracy")
-    plt.xlabel("max depth")
-    plt.show()
+                if auc > max_auc_iter[i]:
+                    max_auc_iter[i] = auc
+                    max_trees_iter[i] = size
+                    max_depth_iter[i] = depth
+        plt.figure()
+        auc_by_forest_size = auc_by_forest_size / (iterations*len(depth_size))
+        auc_by_depth_size = auc_by_depth_size / (iterations*len(forest_size))
+        plt.plot(forest_size, auc_by_forest_size, 'b')
+        plt.ylabel("accuracy")
+        plt.xlabel("forest size")
+        plt.savefig('d:\Documents\Toar\AI\project\graphs\forest_size_avg' + str(i) +'.png')
+        plt.figure()
+        plt.plot(depth_size, auc_by_depth_size, 'r')
+        plt.ylabel("accuracy")
+        plt.xlabel("max depth")
+        plt.savefig('d:\Documents\Toar\AI\project\graphs\max_depth_avg' + str(i) + '.png')
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(max_trees_iter, max_depth_iter, max_auc_iter, c='r', marker='o')
+    ax.set_xlabel('best forest size')
+    ax.set_ylabel('best max depth')
+    ax.set_zlabel('accuracy')
+    plt.savefig('d:\Documents\Toar\AI\project\graphs\iterations_sum.png')
     print("Best accuracy: " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth))
     return max_forest
 
 
-#
-#
-# a = pandas.read_csv(r"d:\Documents\Toar\IML\Hackathon\flights_demo_test_file.csv")
-# d_tree = return_decision_tree(a.iloc[:,8:])
-# b = 5
+def process_data(data):
+    data[data.columns[0]], uniques = pandas.factorize(data[data.columns[0]])
+    drops = []
+    for i in range(len(data)):
+        for j in range(1, len(data.columns)-1):
+            val = np.array(data.iloc[i,j])
+            if data.columns[j] not in  ["RSI", "volume"]:
+                if val[0] != 0:
+                    val = val / val[0]
+                if len(val[val >= 10]) != 0:
+                    drops.append(i)
+                    break
+            elif data.columns[j] == "RSI":
+                if val[0] != 0:
+                    val = val / 100
+                if len(val[val >= 1]) != 0:
+                    drops.append(i)
+                    break
+            else:
+                if val[0] != 0:
+                    val = val / max(val)
+            try:
+                data.iloc[i, j] = Decimal("".join(map("{:3.2f}".format, val)).replace(".", ""))
+            except:
+                drops.append(i)
+                break
+    data = data.drop(drops)
+    data.to_pickle(r'd:\Documents\Toar\AI\project\normalized_data.pkl')
+    data.to_csv(r'd:\Documents\Toar\AI\project\normalized_data.csv')
+
+data = pandas.read_pickle(r'd:\Documents\Toar\AI\project\normalized_data.pkl')
+#data = pandas.read_pickle(r'd:\Documents\Toar\AI\project\data_set.pkl')
+#process_data(data)
+d_tree = return_decision_tree(data, 5)
+#data[data.columns[0]] = uniques
