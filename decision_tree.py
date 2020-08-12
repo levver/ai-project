@@ -123,8 +123,8 @@ def return_decision_tree(data_frame, iterations=1, validation_size=0.3, forest_s
     ax.set_ylabel('max depth')
     ax.set_zlabel('auc value')
     plt.savefig('d:\Documents\Toar\AI\project\graphs\\auc_as_function.png')
-    print("Best score: " + str(max_true) + "correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth))
-    f.write("Best score: " + str(max_true) + " correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth))
+    print("Best score: " + str(max_true) + " correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth) + "\n")
+    f.write("Best score: " + str(max_true) + " correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth) + "\n")
     f.close()
     return max_forest
 
@@ -186,6 +186,12 @@ def run_tree_on_test(tree, X_test_set, y_test_set):
     y_prediction = tree.predict(X_test_set)
     true_rate = 1 - (np.count_nonzero(y_test_set - y_prediction.T) / len(y_test_set))
     print("Test true prediction: " +  str(true_rate))
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test_set, y_prediction)
+    f = open("d:\Documents\Toar\AI\project\graphs\\results.txt", "w")
+    print("auc value: " + str(auc(false_positive_rate, true_positive_rate)))
+    f.write("auc value: " + str(auc(false_positive_rate, true_positive_rate))+"\n")
+    f.write("Test true prediction: " +  str(true_rate))
+    f.close()
     return y_prediction
 
 #data = pandas.read_pickle(r'd:\Documents\Toar\AI\project\normalized_data2.pkl')
@@ -197,4 +203,7 @@ data = data.iloc[:,list(range(231))+[-1]]#.sample(n=10000)
 #process_data(data)
 factorize_data(data)
 d_tree = return_decision_tree(data, 2)
-#data[data.columns[0]] = uniques
+test_data = pandas.read_pickle(r'd:\Documents\Toar\AI\project\test_normalized.pkl')
+factorize_data(test_data)
+run_tree_on_test(d_tree, test_data.iloc[:, :-1], test_data.iloc[:, -1])
+
