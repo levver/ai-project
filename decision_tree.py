@@ -25,7 +25,7 @@ def create_random_forest(X_train, y_train, X_val, y_val, forest_size, max_depth,
     true_rate = 1 - (np.count_nonzero(y_val-val_prediction.T)/len(y_val))
     print("validation prediction: " + str(true_rate) + " matches")
     f.write("validation prediction: " + str(true_rate) + " matches\n")
-    false_positive_rate, true_positive_rate, thresholds = roc_curve(y_val, val_prediction)
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(y_val, forest.predict_proba(X_val)[:,1])
     return forest, auc(false_positive_rate, true_positive_rate), true_rate, val_prediction
 
 
@@ -55,6 +55,7 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
     max_trees = 0
     max_prediction = []
     max_y = []
+    max_x = []
 
     all_trues = []
     all_depths = []
@@ -87,6 +88,7 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
                     max_depth = depth
                     max_prediction = y_prediction
                     max_y = y_val
+                    max_x = X_val
                 all_aucs.append(auc)
                 all_trues.append(true_rate)
                 all_tree_sizes.append(size)
@@ -142,6 +144,16 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
             colors=['g', 'orange', 'r', 'b'], autopct='%1.1f%%', shadow=True)
     plt.title("prediction results on validation\nauc value: " + str(max_auc))
     plt.savefig('d:\Documents\Toar\AI\project\graphs\\validation_pie.png')
+
+    #sixth plot: ROC curve
+    plt.subplots(1, figsize=(10, 10))
+    plt.title('Validation ROC curve')
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(max_y, max_forest.predict_proba(max_x)[:, 1])
+    plt.plot(false_positive_rate, true_positive_rate, linewidth=1.5)
+    plt.plot([0, 1], ls="--")
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.savefig('d:\Documents\Toar\AI\project\graphs\\validation_ROC_curve.png')
     return max_forest
 
 
@@ -203,9 +215,19 @@ def run_tree_on_test(tree, X_test_set, y_test_set, f):
     y_prediction = tree.predict(X_test_set)
     true_rate = 1 - (np.count_nonzero(y_test_set - y_prediction.T) / len(y_test_set))
     print("Test true prediction: " +  str(true_rate))
-    false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test_set, y_prediction)
+    false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test_set, tree.predict_proba(X_test_set)[:,1])
+
+    #plot roc curve
+    plt.subplots(1, figsize=(10, 10))
+    plt.title('Test ROC curve')
+    plt.plot(false_positive_rate, true_positive_rate, linewidth=1.5)
+    plt.plot([0, 1], ls="--")
+    plt.ylabel('True Positive Rate')
+    plt.xlabel('False Positive Rate')
+    plt.savefig('d:\Documents\Toar\AI\project\graphs\\test_ROC_curve.png')
 
     #creates pie chart of the prediction
+    plt.figure()
     tn, fp, fn, tp = (confusion_matrix(y_test_set, y_prediction.T) / len(y_test_set)).ravel()
     print("test: fp: " + str(fp) + " tp: " + str(tp) + " fn: " + str(fn) + " tn: " + str(tn))
     f.write("test: fp: " + str(fp) + " tp: " + str(tp) + " fn: " + str(fn) + " tn: " + str(tn) + "\n")
@@ -219,4 +241,6 @@ def run_tree_on_test(tree, X_test_set, y_test_set, f):
     f.write("auc value: " + str(auc(false_positive_rate, true_positive_rate))+"\n")
     f.write("Test true prediction: " +  str(true_rate))
     return y_prediction
+
+
 
