@@ -29,18 +29,18 @@ def create_random_forest(X_train, y_train, X_val, y_val, forest_size, max_depth,
     return forest, auc(false_positive_rate, true_positive_rate), true_rate
 
 
-def return_decision_tree(data_frame, iterations=1, validation_size=0.3, forest_size = None, depth_size = None):
+def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_size = None, depth_size = None):
     """
     The function will return a decision tree classifier for the given data_frame.
     in each iteration the function will create decision tree base on a different split to train and test sets.
     :param data_frame: the data_frame to work on.
     :param iterations: number of iteration we want the function to do.
+    :param f: file to write results to
     :param validation_size: the percentage of the test set from the entire data.
     :param forest_size: the number of trees in the forest. By default tries different sizes and picks the best.
     :param depth_size: the max depth of each tree in the forest. By default tries different sizes and picks the best.
     :return: best decision tree found.
     """
-    f = open("d:\Documents\Toar\AI\project\graphs\\results.txt", "w")
     X = data_frame.iloc[:, :-1]
     y = data_frame.iloc[:, -1]
     data_size = len(data_frame)
@@ -175,35 +175,24 @@ def process_data(data):
     data.to_pickle(r'd:\Documents\Toar\AI\project\normalized_data.pkl')
     data.to_csv(r'd:\Documents\Toar\AI\project\normalized_data.csv')
 
-def run_tree_on_test(tree, X_test_set, y_test_set):
+def run_tree_on_test(tree, X_test_set, y_test_set, f):
     """
     this function run the best tree found on the test set.
     :param tree: the best tree we found
     :param X_test_set: the test_set X
     :param y_test_set: the test set y
+    :param f: file to write results to
     :return: prediction
     """
     y_prediction = tree.predict(X_test_set)
     true_rate = 1 - (np.count_nonzero(y_test_set - y_prediction.T) / len(y_test_set))
     print("Test true prediction: " +  str(true_rate))
     false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test_set, y_prediction)
-    f = open("d:\Documents\Toar\AI\project\graphs\\results.txt", "w")
     print("auc value: " + str(auc(false_positive_rate, true_positive_rate)))
     f.write("auc value: " + str(auc(false_positive_rate, true_positive_rate))+"\n")
     f.write("Test true prediction: " +  str(true_rate))
     f.close()
     return y_prediction
 
-#data = pandas.read_pickle(r'd:\Documents\Toar\AI\project\normalized_data2.pkl')
-data = pandas.read_pickle(r'd:\Documents\Toar\AI\project\new_normalized_data.pkl')
-data = data.iloc[:,list(range(231))+[-1]]#.sample(n=10000)
-#data = pandas.read_csv(r'd:\Documents\Toar\AI\project\normalized_data2.csv')
-#data.to_pickle(r'd:\Documents\Toar\AI\project\normalized_data2.pkl')
-#data = pandas.read_pickle(r'd:\Documents\Toar\AI\project\data_set.pkl')
-#process_data(data)
-factorize_data(data)
-d_tree = return_decision_tree(data, 2)
-test_data = pandas.read_pickle(r'd:\Documents\Toar\AI\project\test_normalized.pkl')
-factorize_data(test_data)
-run_tree_on_test(d_tree, test_data.iloc[:, :-1], test_data.iloc[:, -1])
+
 
