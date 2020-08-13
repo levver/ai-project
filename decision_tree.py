@@ -125,7 +125,6 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
     plt.savefig('d:\Documents\Toar\AI\project\graphs\\auc_as_function.png')
     print("Best score: " + str(max_true) + " correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth) + "\n")
     f.write("Best score: " + str(max_true) + " correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth) + "\n")
-    f.close()
     return max_forest
 
 
@@ -191,7 +190,6 @@ def run_tree_on_test(tree, X_test_set, y_test_set, f):
     print("auc value: " + str(auc(false_positive_rate, true_positive_rate)))
     f.write("auc value: " + str(auc(false_positive_rate, true_positive_rate))+"\n")
     f.write("Test true prediction: " +  str(true_rate))
-    f.close()
     return y_prediction
 
 
