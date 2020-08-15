@@ -96,7 +96,7 @@ def return_decision_tree(data_frame, iterations, path, validation_size=0.3, fore
                 all_tree_sizes.append(size)
                 all_depths.append(depth)
 
-        if forest_size is None:
+        if len(forest_size) > 1:
             #first plot: avg auc value by forest size
             plt.figure()
             # auc_by_forest_size = auc_by_forest_size / len(depth_size)
@@ -107,7 +107,7 @@ def return_decision_tree(data_frame, iterations, path, validation_size=0.3, fore
             plt.xlabel("forest size")
             plt.savefig(path + '\\forest_size_max' + str(i) + '.png')
 
-        if depth_size is None:
+        if len(depth_size) > 1:
             # second plot: avg auc value by depth size
             plt.figure()
             plt.plot(depth_size[::-1], auc_by_depth_size[::-1], 'r')
@@ -252,3 +252,5 @@ def run_tree_on_test(tree, test_data, path):
     file.write("Test true prediction: " +  str(true_rate))
     file.close()
     return y_prediction
+
+
