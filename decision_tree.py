@@ -8,7 +8,7 @@ from decimal import Decimal
 from math import log
 
 
-def create_random_forest(X_train, y_train, X_val, y_val, forest_size, max_depth, f):
+def create_random_forest(X_train, y_train, X_val, y_val, forest_size, max_depth, file):
     """
     The function creates a random forest and return the forest and its accuracy.
     :param X_train: X train
@@ -24,23 +24,25 @@ def create_random_forest(X_train, y_train, X_val, y_val, forest_size, max_depth,
     val_prediction =  forest.predict(X_val)
     true_rate = 1 - (np.count_nonzero(y_val-val_prediction.T)/len(y_val))
     print("validation prediction: " + str(true_rate) + " matches")
-    f.write("validation prediction: " + str(true_rate) + " matches\n")
+    file.write("validation prediction: " + str(true_rate) + " matches\n")
     false_positive_rate, true_positive_rate, thresholds = roc_curve(y_val, forest.predict_proba(X_val)[:,1])
     return forest, auc(false_positive_rate, true_positive_rate), true_rate, val_prediction
 
 
-def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_size = None, depth_size = None):
+def return_decision_tree(data_frame, iterations, path, validation_size=0.3, forest_size = None, depth_size = None):
     """
     The function will return a decision tree classifier for the given data_frame.
     in each iteration the function will create decision tree base on a different split to train and test sets.
     :param data_frame: the data_frame to work on.
     :param iterations: number of iteration we want the function to do.
-    :param f: file to write results to
+    :param path: path to write results to
     :param validation_size: the percentage of the test set from the entire data.
     :param forest_size: the number of trees in the forest. By default tries different sizes and picks the best.
     :param depth_size: the max depth of each tree in the forest. By default tries different sizes and picks the best.
     :return: best decision tree found.
     """
+    file = open(path + "\\results.txt", "w")
+    factorize_data(data)
     X = data_frame.iloc[:, :-1]
     y = data_frame.iloc[:, -1]
     data_size = len(data_frame)
@@ -66,16 +68,16 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
         auc_by_depth_size = np.array([0] * len(depth_size)).astype(float) #saves avg auc for each max depth
         X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=validation_size)
         print("percent of ones in validation: " + str(len(y_val[y_val==1])/len(y_val)))
-        f.write("percent of ones in validation: " + str(len(y_val[y_val==1])/len(y_val))+"\n")
+        file.write("percent of ones in validation: " + str(len(y_val[y_val==1])/len(y_val))+"\n")
         for j, size in enumerate(forest_size):
             for z, depth in enumerate(depth_size):
                 print("start iteration " + str(i) + " with " + str(size) + " trees and depth " + str(depth))
-                f.write("\nstart iteration " + str(i) + " with " + str(size) + " trees and depth " + str(depth)+"\n")
-                forest, auc, true_rate, y_prediction = create_random_forest(X_train, y_train, X_val, y_val, size, depth, f)
+                file.write("\nstart iteration " + str(i) + " with " + str(size) + " trees and depth " + str(depth)+"\n")
+                forest, auc, true_rate, y_prediction = create_random_forest(X_train, y_train, X_val, y_val, size, depth, file)
                 print("tree auc value: " + str(auc))
                 print("")
-                f.write("tree auc value: " + str(auc) +"\n")
-                f.write("\n")
+                file.write("tree auc value: " + str(auc) +"\n")
+                file.write("\n")
                 if auc_by_forest_size[j] < auc:
                     auc_by_forest_size[j] = auc
                 if auc_by_depth_size[z] < auc:
@@ -94,23 +96,25 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
                 all_tree_sizes.append(size)
                 all_depths.append(depth)
 
-        #first plot: avg auc value by forest size
-        plt.figure()
-        # auc_by_forest_size = auc_by_forest_size / len(depth_size)
-        # auc_by_depth_size = auc_by_depth_size / len(forest_size)
-        plt.plot(forest_size[::-1], auc_by_forest_size[::-1], 'b')
-        plt.title("Iteration "+ str(i+1) +" max auc for each forest size")
-        plt.ylabel("max auc")
-        plt.xlabel("forest size")
-        plt.savefig('d:\Documents\Toar\AI\project\graphs\\forest_size_max' + str(i) +'.png')
+        if forest_size is None:
+            #first plot: avg auc value by forest size
+            plt.figure()
+            # auc_by_forest_size = auc_by_forest_size / len(depth_size)
+            # auc_by_depth_size = auc_by_depth_size / len(forest_size)
+            plt.plot(forest_size[::-1], auc_by_forest_size[::-1], 'b')
+            plt.title("Iteration "+ str(i+1) +" max auc for each forest size")
+            plt.ylabel("max auc")
+            plt.xlabel("forest size")
+            plt.savefig(path + '\\forest_size_max' + str(i) + '.png')
 
-        # second plot: avg auc value by depth size
-        plt.figure()
-        plt.plot(depth_size[::-1], auc_by_depth_size[::-1], 'r')
-        plt.title("Iteration "+ str(i+1) +" max auc for each max depth")
-        plt.ylabel("max auc")
-        plt.xlabel("max depth")
-        plt.savefig('d:\Documents\Toar\AI\project\graphs\max_depth_max' + str(i) + '.png')
+        if depth_size is None:
+            # second plot: avg auc value by depth size
+            plt.figure()
+            plt.plot(depth_size[::-1], auc_by_depth_size[::-1], 'r')
+            plt.title("Iteration "+ str(i+1) +" max auc for each max depth")
+            plt.ylabel("max auc")
+            plt.xlabel("max depth")
+            plt.savefig(path + '\max_depth_max' + str(i) + '.png')
 
 
     #third plot: true predictions as a function of forest size and max depth
@@ -121,7 +125,7 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
     ax.set_xlabel('forest size')
     ax.set_ylabel('max depth')
     ax.set_zlabel('true predictions rate')
-    plt.savefig('d:\Documents\Toar\AI\project\graphs\\true_predictions_as_function.png')
+    plt.savefig(path + '\\true_predictions_as_function.png')
 
     # forth plot: auc as a function of forest size and max depth
     fig = plt.figure()
@@ -131,19 +135,19 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
     ax.set_xlabel('forest size')
     ax.set_ylabel('max depth')
     ax.set_zlabel('auc value')
-    plt.savefig('d:\Documents\Toar\AI\project\graphs\\auc_as_function.png')
+    plt.savefig(path + '\\auc_as_function.png')
     print("Best score: " + str(max_true) + " correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth) + "\n")
-    f.write("Best score: " + str(max_true) + " correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth) + "\n")
+    file.write("Best score: " + str(max_true) + " correct predictions with auc (tpr-fpr relation): " + str(max_auc) + " using " + str(max_trees) + " trees with depth " + str(max_depth) + "\n")
 
     #fifth plot: prediction pie
     tn, fp, fn, tp = (confusion_matrix(max_y, max_prediction.T) / len(max_y)).ravel()
     print("validation: fp: " + str(fp) + " tp: " + str(tp) + " fn: " + str(fn) + " tn: " + str(tn))
-    f.write("validation: fp: " + str(fp) + " tp: " + str(tp) + " fn: " + str(fn) + " tn: " + str(tn) + "\n")
+    file.write("validation: fp: " + str(fp) + " tp: " + str(tp) + " fn: " + str(fn) + " tn: " + str(tn) + "\n")
     fig, ax1 = plt.subplots()
     ax1.pie([tp, fp, fn, tn], labels=["true-positive", "false-positive", "false-negative", "true-negative"],
             colors=['g', 'orange', 'r', 'b'], autopct='%1.1f%%', shadow=True)
     plt.title("prediction results on validation\nauc value: " + str(max_auc))
-    plt.savefig('d:\Documents\Toar\AI\project\graphs\\validation_pie.png')
+    plt.savefig(path + '\\validation_pie.png')
 
     #sixth plot: ROC curve
     plt.subplots(1, figsize=(10, 10))
@@ -153,7 +157,8 @@ def return_decision_tree(data_frame, iterations, f, validation_size=0.3, forest_
     plt.plot([0, 1], ls="--")
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
-    plt.savefig('d:\Documents\Toar\AI\project\graphs\\validation_ROC_curve.png')
+    plt.savefig(path + '\\validation_ROC_curve.png')
+    file.close()
     return max_forest
 
 
@@ -169,11 +174,12 @@ def factorize_data(data):
         data.iloc[i, 0] = int(code)
         continue
 
-def process_data(data):
+def process_data(data, path):
     """
     this function normalize the data and concatenate the normalized values.
     It creates new pkl and csv files with the normalized data.
     :param data: the data to work on.
+    :param path: path to save new files in
     """
     drops = [] #bad rows to drop
     for i in range(len(data)):
@@ -200,18 +206,22 @@ def process_data(data):
                 drops.append(i)
                 break
     data = data.drop(drops)
-    data.to_pickle(r'd:\Documents\Toar\AI\project\normalized_data.pkl')
-    data.to_csv(r'd:\Documents\Toar\AI\project\normalized_data.csv')
+    data.to_pickle(path + '\\normalized_data.pkl')
+    data.to_csv(path + '\\normalized_data.csv')
 
-def run_tree_on_test(tree, X_test_set, y_test_set, f):
+def run_tree_on_test(tree, test_data, path):
     """
     this function run the best tree found on the test set.
     :param tree: the best tree we found
     :param X_test_set: the test_set X
     :param y_test_set: the test set y
-    :param f: file to write results to
+    :param path: path to write results to
     :return: prediction
     """
+    file = open(path + "\\results.txt", "w")
+    factorize_data(test_data)
+    X_test_set = test_data.iloc[:, :-1]
+    y_test_set =  test_data.iloc[:, -1]
     y_prediction = tree.predict(X_test_set)
     true_rate = 1 - (np.count_nonzero(y_test_set - y_prediction.T) / len(y_test_set))
     print("Test true prediction: " +  str(true_rate))
@@ -224,23 +234,22 @@ def run_tree_on_test(tree, X_test_set, y_test_set, f):
     plt.plot([0, 1], ls="--")
     plt.ylabel('True Positive Rate')
     plt.xlabel('False Positive Rate')
-    plt.savefig('d:\Documents\Toar\AI\project\graphs\\test_ROC_curve.png')
+    plt.savefig(path + '\\test_ROC_curve.png')
 
     #creates pie chart of the prediction
     plt.figure()
     tn, fp, fn, tp = (confusion_matrix(y_test_set, y_prediction.T) / len(y_test_set)).ravel()
     print("test: fp: " + str(fp) + " tp: " + str(tp) + " fn: " + str(fn) + " tn: " + str(tn))
-    f.write("test: fp: " + str(fp) + " tp: " + str(tp) + " fn: " + str(fn) + " tn: " + str(tn) + "\n")
+    file.write("test: fp: " + str(fp) + " tp: " + str(tp) + " fn: " + str(fn) + " tn: " + str(tn) + "\n")
     fig, ax1 = plt.subplots()
     ax1.pie([tp, fp, fn, tn], labels=["true-positive", "false-positive", "false-negative", "true-negative"],
             colors=['g', 'orange', 'r', 'b'], autopct='%1.1f%%', shadow=True)
     plt.title("prediction results on test\nauc value: " + str(auc(false_positive_rate, true_positive_rate)))
-    plt.savefig('d:\Documents\Toar\AI\project\graphs\\test_pie.png')
+    plt.savefig(path + '\\test_pie.png')
 
     print("auc value: " + str(auc(false_positive_rate, true_positive_rate)))
-    f.write("auc value: " + str(auc(false_positive_rate, true_positive_rate))+"\n")
-    f.write("Test true prediction: " +  str(true_rate))
+    file.write("auc value: " + str(auc(false_positive_rate, true_positive_rate))+"\n")
+    file.write("Test true prediction: " +  str(true_rate))
+    file.close()
     return y_prediction
-
-
 
