@@ -218,7 +218,7 @@ def run_tree_on_test(tree, test_data, path):
     :param path: path to write results to
     :return: prediction
     """
-    file = open(path + "\\results.txt", "w")
+    file = open(path + "\\results.txt", "a")
     factorize_data(test_data)
     X_test_set = test_data.iloc[:, :-1]
     y_test_set =  test_data.iloc[:, -1]
@@ -252,4 +252,3 @@ def run_tree_on_test(tree, test_data, path):
     file.write("Test true prediction: " +  str(true_rate))
     file.close()
     return y_prediction
-
